@@ -23,6 +23,11 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 app.use(helmet.xssFilter());
 
+app.use((req, res, next) => {
+  console.log(req.path + ' ' + req.method);
+  next();
+})
+
 //Sample front-end
 app.route('/:project/')
   .get(function (req, res) {
@@ -39,14 +44,7 @@ app.route('/')
 fccTestingRoutes(app);
 
 //Routing for API 
-apiRoutes(app);  
-    
-//404 Not Found Middleware
-app.use(function(req, res, next) {
-  res.status(404)
-    .type('text')
-    .send('Not Found');
-});
+apiRoutes(app);
 
 //Start our server and tests!
 app.listen(process.env.PORT || 3000, function () {
