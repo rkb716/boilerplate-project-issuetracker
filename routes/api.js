@@ -32,6 +32,19 @@ module.exports = function (app) {
   const PROJECT = mongoose.model("PROJECT", ProjectSchema);
   const ISSUE = mongoose.model("ISSUE", IssueSchema);
 
+  app.route('/api/reset').get(function(req, res) {
+    ISSUE.deleteMany({}, (err, doc) => {
+      if(err) {
+        console.log(err);
+      }
+    })
+    PROJECT.deleteMany({}, (err, doc) => {
+      if(err) {
+        console.log(err);
+      }
+    })
+  })
+
   app.route('/api/issues/:project')
 
   //I can POST /api/issues/{projectname} with form data containing required issue_title, issue_text, created_by, and optional assigned_to and status_text.
@@ -74,7 +87,7 @@ module.exports = function (app) {
   .get(function (req, res){
     var project = req.params.project;
     console.log("GET called for project: " + project);
-    PROJECT.findOne({project_name: project}, (err, projObj) => {
+    PROJECT.findOneAndUpdate({project_name: project}, {}, {upsert: true, new: true, setDefaultsOnInsert: true}, (err, projObj) => {
       if(err) {
         console.log(err);
         return res.json({error: "Could not GET project"});
@@ -126,12 +139,15 @@ module.exports = function (app) {
   
   //I can DELETE /api/issues/{projectname} with a _id to completely delete an issue. If no _id is sent return '_id error', success: 'deleted '+_id, failed: 'could not delete '+_id.
   .delete(function (req, res){
+    console.log("DELETE called for project: " + req.params.project + " and id: " + req.body._id);
     var project = req.params.project;
     var _id = req.body._id;
     if(_id == null || _id == undefined) {
       return res.json({error: '_id error'});
     } else {
-      PROJECT.findOneAndUpdate({project_name: project}, (err, projObj) => {
+      console.log("check 1");
+      PROJECT.findOne({project_name: project}, (err, projObj) => {
+        console.log("check 2");
         if(err) {
           console.log(err);
           return res.json({error: "could not find project: " + project});
