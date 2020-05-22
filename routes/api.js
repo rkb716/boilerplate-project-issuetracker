@@ -63,6 +63,7 @@ module.exports = function (app) {
             console.log(err);
           }
         });
+        console.log(newIssue.toJSON());
         return res.json(newIssue.toJSON());
       }
     });
@@ -72,7 +73,49 @@ module.exports = function (app) {
   //I can filter my get request by also passing along any field and value in the query(ie. /api/issues/{project}?open=false). I can pass along as many fields/values as I want.
   .get(function (req, res){
     var project = req.params.project;
-    
+    console.log("GET called for project: " + project);
+    PROJECT.findOne({project_name: project}, (err, projObj) => {
+      if(err) {
+        console.log(err);
+        return res.json({error: "Could not GET project"});
+      } else {
+        console.log("Getting docs for project: " + project);
+        let toReturn = projObj.project_issues.filter(function(issue) {
+          if(req.body.issue_title != undefined) {
+            if(req.body.issue_title != issue.issue_title) {
+              return false;
+            }
+          }
+          if(req.body.issue_text != undefined) {
+            if(req.body.issue_text != issue.issue_text) {
+              return false;
+            }
+          }
+          if(req.body.created_by != undefined) {
+            if(req.body.created_by != issue.created_by) {
+              return false;
+            }
+          }
+          if(req.body.assigned_to != undefined) {
+            if(req.body.assigned_to != issue.assigned_to) {
+              return false;
+            }
+          }
+          if(req.body.status_text != undefined) {
+            if(req.body.status_text != issue.status_text) {
+              return false;
+            }
+          }
+          if(req.body.open != undefined) {
+            if(req.body.open != issue.open) {
+              return false;
+            }
+          }
+          return true;
+        });
+        return res.json(toReturn);
+      }
+    })
   })  
   
   //I can PUT /api/issues/{projectname} with a _id and any fields in the object with a value to object said object. Returned will be 'successfully updated' or 'could not update '+_id. This should always update updated_on. If no fields are sent return 'no updated field sent'.
@@ -93,7 +136,10 @@ module.exports = function (app) {
           console.log(err);
           return res.json({error: "could not find project: " + project});
         } else {
+          console.log("deleting issue for project: " + project + " with issue id: " + _id);
+          console.log(projObj.project_issues);
           projObj.project_issues.id(_id).remove();
+          console.log(projObj.project_issues);
           projObj.save((err) => {
             if(err) {
               console.log(err);
