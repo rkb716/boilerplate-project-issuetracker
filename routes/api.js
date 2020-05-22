@@ -51,6 +51,9 @@ module.exports = function (app) {
   //The object saved (and returned) will include all of those fields (blank for optional no input) and also include created_on(date/time), updated_on(date/time), open(boolean, true for open, false for closed), and _id.
   .post(function (req, res){
     var project = req.params.project;
+    if(req.body.issue_title == undefined || req.body.issue_text == undefined || req.body.created_by == undefined){
+      return res.json({error: "Could not POST issue"});
+    }
     PROJECT.findOneAndUpdate({project_name: project}, {}, {upsert: true, new: true, setDefaultsOnInsert: true}, (err, projObj) => {
       if(err) {
         console.log(err);
@@ -134,6 +137,10 @@ module.exports = function (app) {
   .put(function (req, res){
     var project = req.params.project;
     var _id = req.body._id;
+    console.log("put called with _id: " + _id);
+    if(_id == undefined) {
+      return res.json({error: "Missing id"});
+    }
     PROJECT.findOne({project_name: project}, (err, projObj) => {
       if(err) {
         console.log(err);
@@ -144,30 +151,41 @@ module.exports = function (app) {
           return "could not update " + _id;
         }
         issue.updated_on = new Date();
+        let updatedFieldSent = false;
         if(req.body.issue_title != undefined) {
           issue.issue_title = req.body.issue_title;
+          updatedFieldSent = true;
         }
         if(req.body.issue_text != undefined) {
           issue.issue_text = req.body.issue_text;
+          updatedFieldSent = true;
         }
         if(req.body.created_by != undefined) {
           issue.created_by = req.body.created_by;
+          updatedFieldSent = true;
         }
         if(req.body.assigned_to != undefined) {
           issue.assigned_to = req.body.assigned_to;
+          updatedFieldSent = true;
         }
         if(req.body.status_text != undefined) {
           issue.status_text = req.body.status_text;
+          updatedFieldSent = true;
         }
         if(req.body.open != undefined) {
           issue.open = req.body.open;
+          updatedFieldSent = true;
         }
         projObj.save((err) => {
           if(err) {
             console.log(err);
           }
         });
-        return "successfully updated";
+        console.log("finishing up PUT");
+        if(!updatedFieldSent) {
+          return res.send("no updated field sent");
+        }
+        return res.send("successfully updated");
       }
     })
   })
@@ -178,7 +196,7 @@ module.exports = function (app) {
     var project = req.params.project;
     var _id = req.body._id;
     if(_id == null || _id == undefined) {
-      return "_id error";
+      return res.send("_id error");
     } else {
       PROJECT.findOne({project_name: project}, (err, projObj) => {
         if(err) {
@@ -186,16 +204,14 @@ module.exports = function (app) {
           return "error: could not find project: " + project;
         } else {
           console.log("deleting issue for project: " + project + " with issue id: " + _id);
-          console.log(projObj.project_issues);
           projObj.project_issues.id(_id).remove();
-          console.log(projObj.project_issues);
           projObj.save((err) => {
             if(err) {
               console.log(err);
-              return "failed: could not delete " + _id;
+              return res.send("failed: could not delete " + _id);
             }
           });
-          return "success: deleted " + _id;
+          return res.send("success: deleted " + _id);
         }
       });
     }
