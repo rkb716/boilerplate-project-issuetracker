@@ -133,7 +133,43 @@ module.exports = function (app) {
   //I can PUT /api/issues/{projectname} with a _id and any fields in the object with a value to object said object. Returned will be 'successfully updated' or 'could not update '+_id. This should always update updated_on. If no fields are sent return 'no updated field sent'.
   .put(function (req, res){
     var project = req.params.project;
-    
+    var _id = req.body._id;
+    PROJECT.findOne({project_name: project}, (err, projObj) => {
+      if(err) {
+        console.log(err);
+        return "could not update " + _id;
+      } else {
+        let issue = projObj.project_issues.id(_id);
+        if(issue == null || issue == undefined) {
+          return "could not update " + _id;
+        }
+        issue.updated_on = new Date();
+        if(req.body.issue_title != undefined) {
+          issue.issue_title = req.body.issue_title;
+        }
+        if(req.body.issue_text != undefined) {
+          issue.issue_text = req.body.issue_text;
+        }
+        if(req.body.created_by != undefined) {
+          issue.created_by = req.body.created_by;
+        }
+        if(req.body.assigned_to != undefined) {
+          issue.assigned_to = req.body.assigned_to;
+        }
+        if(req.body.status_text != undefined) {
+          issue.status_text = req.body.status_text;
+        }
+        if(req.body.open != undefined) {
+          issue.open = req.body.open;
+        }
+        projObj.save((err) => {
+          if(err) {
+            console.log(err);
+          }
+        });
+        return "successfully updated";
+      }
+    })
   })
   
   //I can DELETE /api/issues/{projectname} with a _id to completely delete an issue. If no _id is sent return '_id error', success: 'deleted '+_id, failed: 'could not delete '+_id.
