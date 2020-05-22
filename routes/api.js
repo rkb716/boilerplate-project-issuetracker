@@ -15,10 +15,6 @@ var Schema = mongoose.Schema;
 
 module.exports = function (app) {
   mongoose.connect(process.env.DATABASE, {useNewUrlParser: true, useUnifiedTopology: true});
-  const ProjectSchema = new Schema({
-    project_name: String,
-    project_issues: [mongoose.ObjectId]
-  });
   const IssueSchema = new Schema({
     issue_title: String,
     issue_text: String,
@@ -29,7 +25,10 @@ module.exports = function (app) {
     updated_on: Date,
     open: Boolean
   });
-
+  const ProjectSchema = new Schema({
+    project_name: String,
+    project_issues: [IssueSchema]
+  });
   const PROJECT = mongoose.model("PROJECT", ProjectSchema);
   const ISSUE = mongoose.model("ISSUE", IssueSchema);
 
@@ -58,7 +57,7 @@ module.exports = function (app) {
             console.log(err);
           }
         });
-        projObj.project_issues.push(newIssue._id);
+        projObj.project_issues.push(newIssue);
         projObj.save((err) => {
           if(err) {
             console.log(err);
@@ -74,9 +73,7 @@ module.exports = function (app) {
   .get(function (req, res){
     var project = req.params.project;
     
-  })
-  
-  
+  })  
   
   //I can PUT /api/issues/{projectname} with a _id and any fields in the object with a value to object said object. Returned will be 'successfully updated' or 'could not update '+_id. This should always update updated_on. If no fields are sent return 'no updated field sent'.
   .put(function (req, res){
@@ -91,11 +88,18 @@ module.exports = function (app) {
     if(_id == null || _id == undefined) {
       return res.json({error: '_id error'});
     } else {
-      ISSUE.findByIdAndDelete(_id, (err, doc) => {
+      PROJECT.findOneAndUpdate({project_name: project}, (err, projObj) => {
         if(err) {
           console.log(err);
-          return res.json({failed: 'could not delete ' + _id});
+          return res.json({error: "could not find project: " + project});
         } else {
+          projObj.project_issues.id(_id).remove();
+          projObj.save((err) => {
+            if(err) {
+              console.log(err);
+              return res.json({failed: "could not delete " + _id});
+            }
+          });
           return res.json({success: 'deleted ' + _id});
         }
       });
