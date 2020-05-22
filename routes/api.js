@@ -76,7 +76,6 @@ module.exports = function (app) {
             console.log(err);
           }
         });
-        console.log(newIssue.toJSON());
         return res.json(newIssue.toJSON());
       }
     });
@@ -143,14 +142,12 @@ module.exports = function (app) {
     var project = req.params.project;
     var _id = req.body._id;
     if(_id == null || _id == undefined) {
-      return res.json({error: '_id error'});
+      return "_id error";
     } else {
-      console.log("check 1");
       PROJECT.findOne({project_name: project}, (err, projObj) => {
-        console.log("check 2");
         if(err) {
           console.log(err);
-          return res.json({error: "could not find project: " + project});
+          return "error: could not find project: " + project;
         } else {
           console.log("deleting issue for project: " + project + " with issue id: " + _id);
           console.log(projObj.project_issues);
@@ -159,10 +156,10 @@ module.exports = function (app) {
           projObj.save((err) => {
             if(err) {
               console.log(err);
-              return res.json({failed: "could not delete " + _id});
+              return "failed: could not delete " + _id;
             }
           });
-          return res.json({success: 'deleted ' + _id});
+          return "success: deleted " + _id;
         }
       });
     }
