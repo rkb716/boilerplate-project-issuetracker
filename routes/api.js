@@ -87,7 +87,19 @@ module.exports = function (app) {
   //I can DELETE /api/issues/{projectname} with a _id to completely delete an issue. If no _id is sent return '_id error', success: 'deleted '+_id, failed: 'could not delete '+_id.
   .delete(function (req, res){
     var project = req.params.project;
-    
+    var _id = req.body._id;
+    if(_id == null || _id == undefined) {
+      return res.json({error: '_id error'});
+    } else {
+      ISSUE.findByIdAndDelete(_id, (err, doc) => {
+        if(err) {
+          console.log(err);
+          return res.json({failed: 'could not delete ' + _id});
+        } else {
+          return res.json({success: 'deleted ' + _id});
+        }
+      });
+    }
   });
 
   //404 Not Found Middleware
